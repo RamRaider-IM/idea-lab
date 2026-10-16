@@ -8,7 +8,13 @@ A personal dashboard for testing business ideas quickly and consistently, built 
 
 Every idea moves through the same loop: **Plan → Research → Build & launch → Monitor → Decide**. Each phase has a gate with concrete, evidence-based criteria. The dashboard scores each idea (market, value, demand, traction), recommends scale / persevere / pivot / kill from the numbers, and keeps a decision log.
 
-## Run it
+## Live site
+
+The dashboard is hosted free on GitHub Pages at **https://ramraider-im.github.io/idea-lab/** (HTTPS enforced). Every push to `main` rebuilds and redeploys it through `.github/workflows/deploy.yml`.
+
+The site holds no data of its own: everything you enter stays in the browser you entered it in (localStorage), so anyone else opening the URL sees an empty dashboard. To use it on a second device, Export JSON on one and Import on the other. A proper cross-device sync and a login gate are on the backlog.
+
+## Run it locally
 
 ```bash
 npm install
@@ -65,7 +71,6 @@ Thresholds are editable in Settings. The weekly metrics row is: visitors, sign-u
 4. Advance anything whose gate is green and write down why.
 5. Pick one experiment per live app for the coming week.
 
-## Next steps worth considering
+## Next steps
 
-- Pull visitors / sign-ups / revenue automatically from analytics and payment providers instead of typing them in.
-- Sync the store to a hosted database so it works across devices.
+See [BACKLOG.md](BACKLOG.md).
