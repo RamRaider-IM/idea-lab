@@ -93,5 +93,5 @@ export function exampleState(): AppState {
   c.plan.avatar = 'People who just got an allotment after a long waiting list and have no idea what to plant when.'
   c.plan.market = { pain: 3, money: 3, targetable: 4, growing: 3 }
 
-  return { version: 1, ideas: [a, b, c], settings: DEFAULT_SETTINGS }
+  return { version: 1, ideas: [a, b, c], settings: DEFAULT_SETTINGS, tombstones: {}, updatedAt: new Date().toISOString() }
 }

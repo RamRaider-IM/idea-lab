@@ -6,6 +6,8 @@ import Portfolio from './pages/Portfolio'
 import IdeaPage from './pages/IdeaPage'
 import Guide from './pages/Guide'
 import SettingsPage from './pages/SettingsPage'
+import { SyncProvider } from './sync'
+import { SyncBadge } from './components/SyncCard'
 
 const STAGE_COLOR: Record<string, string> = { plan: 'var(--ord-1)', research: 'var(--ord-2)', build: 'var(--ord-3)', monitor: 'var(--ord-4)', decided: 'var(--muted)' }
 
@@ -53,7 +55,8 @@ function Shell() {
             </Link>
           ))}
         </nav>
-        <div className="foot">
+        <div style={{ marginTop: 'auto' }}><SyncBadge /></div>
+        <div className="foot" style={{ marginTop: 6 }}>
           <button type="button" className="btn primary flex1" onClick={() => setNewOpen(true)}>+ New idea</button>
           <button type="button" className="btn icon" title={`Theme: ${theme}. Click for ${nextTheme}.`} onClick={() => setTheme(nextTheme)}>{theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '◐'}</button>
         </div>
@@ -74,5 +77,5 @@ function Shell() {
 }
 
 export default function App() {
-  return <StoreProvider><Shell /></StoreProvider>
+  return <StoreProvider><SyncProvider><Shell /></SyncProvider></StoreProvider>
 }

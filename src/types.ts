@@ -182,6 +182,8 @@ export interface AppState {
   version: 1
   ideas: Idea[]
   settings: Settings
+  updatedAt: string                  // ISO time of the last change on any device
+  tombstones: Record<string, string> // deleted idea id -> ISO time of deletion
 }
 
 // ---------- Factories ----------

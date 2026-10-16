@@ -12,7 +12,32 @@ Every idea moves through the same loop: **Plan → Research → Build & launch �
 
 The dashboard is hosted free on GitHub Pages at **https://ramraider-im.github.io/idea-lab/** (HTTPS enforced). Every push to `main` rebuilds and redeploys it through `.github/workflows/deploy.yml`.
 
-The site holds no data of its own: everything you enter stays in the browser you entered it in (localStorage), so anyone else opening the URL sees an empty dashboard. To use it on a second device, Export JSON on one and Import on the other. A proper cross-device sync and a login gate are on the backlog.
+The site holds no data of its own: everything you enter stays in the browser you entered it in (localStorage), so anyone else opening the URL sees an empty dashboard. Sign in (see below) to sync between devices.
+
+## Sync across devices (optional)
+
+Sign in with an emailed link and the same ideas follow you between laptops, phones and browsers. It runs on a free Supabase project; the app only ever touches the signed-in user's own row.
+
+One-off setup, about five minutes:
+
+1. **Create the table.** In the Supabase dashboard open *SQL Editor*, paste `supabase/migrations/20261016_idea_lab_state.sql` and run it. It creates `idea_lab_state`, turns on row-level security so each user can only read and write their own row, and enables live updates.
+2. **Allow the sign-in link to come back to the app.** *Authentication → URL Configuration*: set *Site URL* to `https://ramraider-im.github.io/idea-lab/` and add these to *Redirect URLs*:
+   - `https://ramraider-im.github.io/idea-lab/**`
+   - `http://localhost:5173/**`
+3. **Give the app the project's URL and publishable key.** *Project Settings → API* has both. For the hosted site, store them as repository variables so the Pages build picks them up:
+
+   ```bash
+   gh variable set VITE_SUPABASE_URL --body "https://YOUR-REF.supabase.co"
+   ```
+
+   ```bash
+   gh variable set VITE_SUPABASE_KEY --body "sb_publishable_..."
+   ```
+
+   Then push any commit (or run the *Deploy to GitHub Pages* workflow) to rebuild. For local development copy `.env.example` to `.env.local` with the same values.
+4. **Sign in.** *Settings & data → Sync across devices* → enter your email → open the link on that device. Repeat on each device. Whatever was already on a device is kept and merged in.
+
+How merging works: ideas are matched by id and the most recently edited copy wins; a deleted idea leaves a tombstone so it does not come back from another device; settings come from whichever device changed them last. Supabase's built-in email sender is rate-limited to a handful of messages an hour, which is fine for signing in a few devices once.
 
 ## Run it locally
 
@@ -36,8 +61,12 @@ src/
   types.ts        data model, factories, default gates and checklist
   scoring.ts      market / value / demand / traction scores, gates, recommendation rules
   store.tsx       reducer + localStorage persistence + theme
+  sync.tsx        Supabase sign-in and two-way sync on top of the store
+  merge.ts        merge rules for state from two devices
+  config.ts       Supabase URL and key from env
   seed.ts         three example ideas
   components/
+    SyncCard.tsx  sign-in form and sidebar sync badge
     ui.tsx        fields, ratings, chips, cards, modal, gate list, hash routing
     charts.tsx    sparkline, line chart with tooltip and table view, funnel
   pages/

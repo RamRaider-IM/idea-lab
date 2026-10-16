@@ -12,12 +12,13 @@ type Action =
   | { type: 'replace'; state: AppState }
 
 function reducer(state: AppState, a: Action): AppState {
+  const now = new Date().toISOString()
   switch (a.type) {
-    case 'add': return { ...state, ideas: [a.idea, ...state.ideas] }
-    case 'update': return { ...state, ideas: state.ideas.map(i => (i.id === a.id ? { ...a.fn(i), updatedAt: new Date().toISOString() } : i)) }
-    case 'delete': return { ...state, ideas: state.ideas.filter(i => i.id !== a.id) }
-    case 'settings': return { ...state, settings: { ...state.settings, ...a.patch, gates: { ...state.settings.gates, ...(a.patch.gates ?? {}) } } }
-    case 'replace': return a.state
+    case 'add': return { ...state, updatedAt: now, ideas: [a.idea, ...state.ideas] }
+    case 'update': return { ...state, updatedAt: now, ideas: state.ideas.map(i => (i.id === a.id ? { ...a.fn(i), updatedAt: now } : i)) }
+    case 'delete': return { ...state, updatedAt: now, ideas: state.ideas.filter(i => i.id !== a.id), tombstones: { ...state.tombstones, [a.id]: now } }
+    case 'settings': return { ...state, updatedAt: now, settings: { ...state.settings, ...a.patch, gates: { ...state.settings.gates, ...(a.patch.gates ?? {}) } } }
+    case 'replace': return normalise(a.state)
   }
 }
 
@@ -27,17 +28,24 @@ export function isAppState(x: unknown): x is AppState {
   return Array.isArray(s.ideas) && typeof s.settings === 'object'
 }
 
+/** Fill defaults for anything an older export or a fresh import may be missing. */
+export function normalise(p: Partial<AppState>): AppState {
+  const settings = { ...DEFAULT_SETTINGS, ...(p.settings ?? {}), gates: { ...DEFAULT_SETTINGS.gates, ...(p.settings?.gates ?? {}) } }
+  const ideas = (p.ideas ?? []).map(i => ({ ...i, updatedAt: i.updatedAt || i.createdAt || new Date(0).toISOString() }))
+  return { version: 1, ideas, settings, tombstones: p.tombstones ?? {}, updatedAt: p.updatedAt ?? new Date(0).toISOString() }
+}
+
+export const EMPTY_STATE: AppState = { version: 1, ideas: [], settings: DEFAULT_SETTINGS, tombstones: {}, updatedAt: new Date(0).toISOString() }
+
 function load(): AppState {
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) {
       const parsed: unknown = JSON.parse(raw)
-      if (isAppState(parsed)) {
-        return { version: 1, ideas: parsed.ideas, settings: { ...DEFAULT_SETTINGS, ...parsed.settings, gates: { ...DEFAULT_SETTINGS.gates, ...parsed.settings.gates } } }
-      }
+      if (isAppState(parsed)) return normalise(parsed)
     }
   } catch { /* fall through to a fresh state */ }
-  return { version: 1, ideas: [], settings: DEFAULT_SETTINGS }
+  return EMPTY_STATE
 }
 
 interface Store {

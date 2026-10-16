@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { useStore, isAppState } from '../store'
+import { useStore, isAppState, normalise } from '../store'
 import { Card, Field, NumberInput, TextInput, Segmented } from '../components/ui'
 import { exampleState } from '../seed'
+import { SyncCard } from '../components/SyncCard'
 import { DEFAULT_SETTINGS, type Settings } from '../types'
 
 export default function SettingsPage() {
@@ -24,7 +25,7 @@ export default function SettingsPage() {
       const parsed: unknown = JSON.parse(await f.text())
       if (!isAppState(parsed)) throw new Error('Not an Idea Lab export')
       if (state.ideas.length > 0 && !window.confirm(`Replace the ${state.ideas.length} idea(s) currently stored with the ${parsed.ideas.length} in this file?`)) return
-      replaceState({ version: 1, ideas: parsed.ideas, settings: { ...DEFAULT_SETTINGS, ...parsed.settings, gates: { ...DEFAULT_SETTINGS.gates, ...parsed.settings.gates } } })
+      replaceState({ ...normalise(parsed), updatedAt: new Date().toISOString() })
       setMsg(`Imported ${parsed.ideas.length} idea(s).`)
     } catch (e) {
       setMsg(`Import failed: ${(e as Error).message}`)
@@ -36,13 +37,16 @@ export default function SettingsPage() {
   }
   const clearAll = () => {
     if (!window.confirm('Delete every idea? Export first if you might want them back.')) return
-    replaceState({ version: 1, ideas: [], settings: state.settings }); setMsg('Cleared.')
+    const now = new Date().toISOString()
+    const tombstones = { ...state.tombstones, ...Object.fromEntries(state.ideas.map(i => [i.id, now])) }
+    replaceState({ version: 1, ideas: [], settings: state.settings, tombstones, updatedAt: now }); setMsg('Cleared.')
   }
 
   return (
     <>
       <div className="page-head"><div><h1>Settings & data</h1><p className="lede">The bars every idea is judged against, and where the data lives.</p></div></div>
       <div className="stack">
+        <SyncCard />
         <Card title="Gates" why="Defaults follow the books. Raise or lower them as your own markets teach you what a real signal looks like." right={<button type="button" className="btn sm" onClick={() => updateSettings({ gates: DEFAULT_SETTINGS.gates })}>Reset to defaults</button>}>
           <div className="grid3">
             <Field label="Market score minimum" help="/ 5"><NumberInput step={0.5} value={g.marketMin} onChange={v => setGate('marketMin', v)} /></Field>
@@ -63,7 +67,7 @@ export default function SettingsPage() {
               <Field label="Theme"><div><Segmented options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} value={theme} onChange={setTheme} /></div></Field>
             </div>
           </Card>
-          <Card title="Data" why="Everything is stored in this browser only. Export a JSON backup now and then, or to move between machines.">
+          <Card title="Data" why="Stored in this browser, and in your sync account when signed in. Export a JSON backup now and then.">
             <div className="row wrap">
               <button type="button" className="btn" onClick={exportJson}>Export JSON</button>
               <button type="button" className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
